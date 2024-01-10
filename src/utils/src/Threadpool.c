@@ -68,6 +68,7 @@ PVOID threadpoolActor(PVOID data)
 
         if (MUTEX_TRYLOCK(pThreadData->dataMutex)) {
             // Threadpool is active - lock its mutex
+            ATOMIC_INCREMENT(&pThreadpool->atLockCount);
             MUTEX_LOCK(pThreadpool->listMutex);
 
             // Check that there aren't any pending tasks.
@@ -98,6 +99,7 @@ PVOID threadpoolActor(PVOID data)
             }
             MUTEX_UNLOCK(pThreadpool->listMutex);
             MUTEX_UNLOCK(pThreadData->dataMutex);
+            ATOMIC_DECREMENT(&pThreadpool->atLockCount);
         } else {
             // couldn't lock our mutex, which means Threadpool locked this mutex to indicate
             // Threadpool has been deleted.
@@ -134,6 +136,7 @@ STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 max
 
     pThreadpool->listMutex = MUTEX_CREATE(FALSE);
     mutexCreated = TRUE;
+    ATOMIC_STORE(&pThreadpool->atLockCount, 0);
 
     CHK_STATUS(safeBlockingQueueCreate(&pThreadpool->taskQueue));
     queueCreated = TRUE;
@@ -179,6 +182,7 @@ STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
     TID thread;
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
 
+    ATOMIC_INCREMENT(&pThreadpool->atLockCount);
     CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
 
     MUTEX_LOCK(pThreadpool->listMutex);
@@ -202,6 +206,7 @@ CleanUp:
     if (locked) {
         MUTEX_UNLOCK(pThreadpool->listMutex);
     }
+    ATOMIC_DECREMENT(&pThreadpool->atLockCount);
 
     return retStatus;
 }
@@ -238,6 +243,7 @@ STATUS threadpoolInternalCanCreateThread(PThreadpool pThreadpool, PBOOL pSpaceAv
     BOOL locked = FALSE;
 
     CHK(pThreadpool != NULL && pSpaceAvailable != NULL, STATUS_NULL_ARG);
+    ATOMIC_INCREMENT(&pThreadpool->atLockCount);
     CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
 
     MUTEX_LOCK(pThreadpool->listMutex);
@@ -259,6 +265,7 @@ CleanUp:
         MUTEX_UNLOCK(pThreadpool->listMutex);
     }
 
+    ATOMIC_DECREMENT(&pThreadpool->atLockCount);
     return retStatus;
 }
 
@@ -281,6 +288,17 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
 
     // set terminate flag of pool -- no new threads/items can be added now
     ATOMIC_STORE_BOOL(&pThreadpool->terminate, TRUE);
+    int blockCount = 0;
+
+    while (TRUE) {
+        //wait for all new threads to finish thread_create, for 3 times.
+        THREAD_SLEEP(SEMAPHORE_SHUTDOWN_SPINLOCK_SLEEP_DURATION);
+        if (ATOMIC_LOAD(&pThreadpool->atLockCount) == 0){
+            if (blockCount++ > 3){
+            	break;
+        	}
+        }
+    };
 
     CHK_STATUS(safeBlockingQueueIsEmpty(pThreadpool->taskQueue, &taskQueueEmpty));
     if (!taskQueueEmpty) {
@@ -355,6 +373,7 @@ STATUS threadpoolTotalThreadCount(PThreadpool pThreadpool, PUINT32 pCount)
     BOOL locked = FALSE;
 
     CHK(pThreadpool != NULL && pCount != NULL, STATUS_NULL_ARG);
+    ATOMIC_INCREMENT(&pThreadpool->atLockCount);
     CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
 
     MUTEX_LOCK(pThreadpool->listMutex);
@@ -369,6 +388,7 @@ CleanUp:
     if (locked) {
         MUTEX_UNLOCK(pThreadpool->listMutex);
     }
+    ATOMIC_DECREMENT(&pThreadpool->atLockCount);
     return retStatus;
 }
 
@@ -435,6 +455,7 @@ STATUS threadpoolPush(PThreadpool pThreadpool, startRoutine function, PVOID cust
     SIZE_T count = 0;
     CHK(pThreadpool != NULL, STATUS_NULL_ARG);
 
+    CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
     CHK_STATUS(threadpoolInternalCanCreateThread(pThreadpool, &spaceAvailable));
     CHK_STATUS(threadpoolInternalInactiveThreadCount(pThreadpool, &count));
 

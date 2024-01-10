@@ -1939,6 +1939,8 @@ typedef struct __Threadpool {
     PStackQueue threadList;
 
     MUTEX listMutex;
+    //add running count for thread_create request lock 
+    volatile SIZE_T atLockCount;
     UINT32 minThreads;
     UINT32 maxThreads;
 } Threadpool, *PThreadpool;
