@@ -124,7 +124,7 @@ STATUS threadpoolCreate(PThreadpool* ppThreadpool, UINT32 minThreads, UINT32 max
     UINT32 i = 0;
     PThreadpool pThreadpool = NULL;
     BOOL poolCreated = FALSE, mutexCreated = FALSE, listCreated = FALSE, queueCreated = FALSE;
-    CHK(ppThreadpool != NULL, STATUS_NULL_ARG);
+    CHKPT(ppThreadpool != NULL, STATUS_NULL_ARG);
     CHK(minThreads <= maxThreads && minThreads > 0 && maxThreads > 0, STATUS_INVALID_ARG);
 
     pThreadpool = (PThreadpool) MEMCALLOC(1, SIZEOF(Threadpool));
@@ -180,7 +180,7 @@ STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
     PThreadData data = NULL;
     BOOL locked = FALSE;
     TID thread;
-    CHK(pThreadpool != NULL, STATUS_NULL_ARG);
+    CHKPT(pThreadpool != NULL, STATUS_NULL_ARG);
 
     ATOMIC_INCREMENT(&pThreadpool->atLockCount);
     CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
@@ -216,7 +216,7 @@ STATUS threadpoolInternalCreateTask(PThreadpool pThreadpool, startRoutine functi
     STATUS retStatus = STATUS_SUCCESS;
     PTaskData pTask = NULL;
     BOOL allocated = FALSE;
-    CHK(pThreadpool != NULL, STATUS_NULL_ARG);
+    CHKPT(pThreadpool != NULL, STATUS_NULL_ARG);
 
     pTask = (PTaskData) MEMCALLOC(1, SIZEOF(TaskData));
     CHK(pTask != NULL, STATUS_NOT_ENOUGH_MEMORY);
@@ -242,7 +242,7 @@ STATUS threadpoolInternalCanCreateThread(PThreadpool pThreadpool, PBOOL pSpaceAv
     UINT32 count = 0;
     BOOL locked = FALSE;
 
-    CHK(pThreadpool != NULL && pSpaceAvailable != NULL, STATUS_NULL_ARG);
+    CHKPT(pThreadpool != NULL && pSpaceAvailable != NULL, STATUS_NULL_ARG);
     ATOMIC_INCREMENT(&pThreadpool->atLockCount);
     CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
 
@@ -278,7 +278,7 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
     StackQueueIterator iterator;
     PThreadData item = NULL;
     BOOL finished = FALSE, taskQueueEmpty = FALSE;
-    CHK(pThreadpool != NULL, STATUS_NULL_ARG);
+    CHKPT(pThreadpool != NULL, STATUS_NULL_ARG);
 
     // Threads are not forced to finish their tasks. If the user has assigned
     // a thread with an infinite loop then this threadpool object cannot safely
@@ -374,7 +374,7 @@ STATUS threadpoolTotalThreadCount(PThreadpool pThreadpool, PUINT32 pCount)
     STATUS retStatus = STATUS_SUCCESS;
     BOOL locked = FALSE;
 
-    CHK(pThreadpool != NULL && pCount != NULL, STATUS_NULL_ARG);
+    CHKPT(pThreadpool != NULL && pCount != NULL, STATUS_NULL_ARG);
     ATOMIC_INCREMENT(&pThreadpool->atLockCount);
     CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
 
@@ -403,7 +403,7 @@ STATUS threadpoolInternalInactiveThreadCount(PThreadpool pThreadpool, PSIZE_T pC
     SIZE_T unblockedThreads = 0;
     UINT32 pendingTasks;
 
-    CHK(pThreadpool != NULL && pCount != NULL, STATUS_NULL_ARG);
+    CHKPT(pThreadpool != NULL && pCount != NULL, STATUS_NULL_ARG);
     CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
 
     CHK_STATUS(safeBlockingQueueGetCount(pThreadpool->taskQueue, &pendingTasks));
@@ -426,7 +426,7 @@ STATUS threadpoolTryAdd(PThreadpool pThreadpool, startRoutine function, PVOID cu
     STATUS retStatus = STATUS_SUCCESS;
     BOOL spaceAvailable = FALSE;
     SIZE_T count = 0;
-    CHK(pThreadpool != NULL, STATUS_NULL_ARG);
+    CHKPT(pThreadpool != NULL, STATUS_NULL_ARG);
 
     CHK_STATUS(threadpoolInternalCanCreateThread(pThreadpool, &spaceAvailable));
     CHK_STATUS(threadpoolInternalInactiveThreadCount(pThreadpool, &count));
@@ -455,7 +455,7 @@ STATUS threadpoolPush(PThreadpool pThreadpool, startRoutine function, PVOID cust
     STATUS retStatus = STATUS_SUCCESS;
     BOOL spaceAvailable = FALSE;
     SIZE_T count = 0;
-    CHK(pThreadpool != NULL, STATUS_NULL_ARG);
+    CHKPT(pThreadpool != NULL, STATUS_NULL_ARG);
 
     CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
     CHK_STATUS(threadpoolInternalCanCreateThread(pThreadpool, &spaceAvailable));

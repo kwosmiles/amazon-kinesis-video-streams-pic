@@ -1862,8 +1862,6 @@ typedef struct {
     volatile SIZE_T atLockCount;
     PStackQueue queue;
     MUTEX mutex;
-    SEMAPHORE_HANDLE semaphore;
-    CVAR terminationSignal;
 } SafeBlockingQueue, *PSafeBlockingQueue;
 
 /**

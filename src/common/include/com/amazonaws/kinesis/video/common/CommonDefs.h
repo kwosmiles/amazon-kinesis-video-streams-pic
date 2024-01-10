@@ -1111,6 +1111,14 @@ typedef UINT64 HANDLE;
 ////////////////////////////////////////////////////
 // Conditional checks
 ////////////////////////////////////////////////////
+#define CHKPT(condition, errRet)                                                                                                                       \
+    do {                                                                                                                                             \
+        if (!(condition)) {                                                                                                                          \
+            retStatus = (errRet);                                                                                                                    \
+            return errRet;                                                                                                                            \
+        }                                                                                                                                            \
+    } while (FALSE)
+
 #define CHK(condition, errRet)                                                                                                                       \
     do {                                                                                                                                             \
         if (!(condition)) {                                                                                                                          \
