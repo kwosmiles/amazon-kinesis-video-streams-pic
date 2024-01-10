@@ -187,6 +187,7 @@ STATUS threadpoolInternalCreateThread(PThreadpool pThreadpool)
 
     MUTEX_LOCK(pThreadpool->listMutex);
     locked = TRUE;
+    CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
 
     data = (PThreadData) MEMCALLOC(1, SIZEOF(ThreadData));
     CHK(data != NULL, STATUS_NOT_ENOUGH_MEMORY);
@@ -248,6 +249,7 @@ STATUS threadpoolInternalCanCreateThread(PThreadpool pThreadpool, PBOOL pSpaceAv
 
     MUTEX_LOCK(pThreadpool->listMutex);
     locked = TRUE;
+    CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
 
     CHK_STATUS(stackQueueGetCount(pThreadpool->threadList, &count));
 
@@ -380,6 +382,7 @@ STATUS threadpoolTotalThreadCount(PThreadpool pThreadpool, PUINT32 pCount)
 
     MUTEX_LOCK(pThreadpool->listMutex);
     locked = TRUE;
+    CHK(!ATOMIC_LOAD_BOOL(&pThreadpool->terminate), STATUS_INVALID_OPERATION);
 
     CHK_STATUS(stackQueueGetCount(pThreadpool->threadList, pCount));
 

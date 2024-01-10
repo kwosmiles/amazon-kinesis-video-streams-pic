@@ -86,6 +86,7 @@ STATUS safeBlockingQueueClear(PSafeBlockingQueue pSafeQueue, BOOL freeData)
 
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     CHK_STATUS(stackQueueClear(pSafeQueue->queue, freeData));
 
@@ -115,6 +116,7 @@ STATUS safeBlockingQueueGetCount(PSafeBlockingQueue pSafeQueue, PUINT32 pCount)
 
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     CHK_STATUS(stackQueueGetCount(pSafeQueue->queue, pCount));
 
@@ -144,6 +146,7 @@ STATUS safeBlockingQueueIsEmpty(PSafeBlockingQueue pSafeQueue, PBOOL pIsEmpty)
 
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     CHK_STATUS(stackQueueIsEmpty(pSafeQueue->queue, pIsEmpty));
 
@@ -173,6 +176,7 @@ STATUS safeBlockingQueueEnqueue(PSafeBlockingQueue pSafeQueue, UINT64 item)
 
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     CHK_STATUS(stackQueueEnqueue(pSafeQueue->queue, item));
 
@@ -202,6 +206,7 @@ STATUS safeBlockingQueueDequeue(PSafeBlockingQueue pSafeQueue, PUINT64 pItem)
     
     MUTEX_LOCK(pSafeQueue->mutex);
     locked = TRUE;
+    CHK(!ATOMIC_LOAD_BOOL(&pSafeQueue->terminate), STATUS_INVALID_OPERATION);
 
     CHK_STATUS(stackQueueDequeue(pSafeQueue->queue, pItem));
 
