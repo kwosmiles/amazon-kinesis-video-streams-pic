@@ -295,8 +295,8 @@ STATUS threadpoolFree(PThreadpool pThreadpool)
         THREAD_SLEEP(SEMAPHORE_SHUTDOWN_SPINLOCK_SLEEP_DURATION);
         if (ATOMIC_LOAD(&pThreadpool->atLockCount) == 0){
             if (blockCount++ > 3){
-            	break;
-        	}
+                break;
+            }
         }
     };
 
